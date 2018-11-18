@@ -54,8 +54,8 @@ class MnistDataGenerator(object):
     def __init__(self, batch_size):
         self.batch_size = batch_size
         (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
-        self.x_train = np.expand_dims(x_train, axis=-1)
-        self.x_test = np.expand_dims(x_test, axis=-1)
+        self.x_train = np.expand_dims(x_train, axis=-1) / 255.
+        self.x_test = np.expand_dims(x_test, axis=-1) / 255.
 
         self.y_train = tf.keras.utils.to_categorical(y_train, 10)
         self.y_test = tf.keras.utils.to_categorical(y_test, 10)
