@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 import random
 import threading
+from time import sleep
 
 
 class CustomRunner(object):
@@ -53,8 +54,8 @@ class MnistDataGenerator(object):
     def __init__(self, batch_size):
         self.batch_size = batch_size
         (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
-        self.x_train = np.expand_dims(x_train, axis=-1) / 255.
-        self.x_test = np.expand_dims(x_test, axis=-1) / 255.
+        self.x_train = np.expand_dims(x_train, axis=-1)
+        self.x_test = np.expand_dims(x_test, axis=-1)
 
         self.y_train = tf.keras.utils.to_categorical(y_train, 10)
         self.y_test = tf.keras.utils.to_categorical(y_test, 10)
@@ -65,6 +66,8 @@ class MnistDataGenerator(object):
             i = random.randint(0, len(self.x_train) - self.batch_size)
             batch_x = self.x_train[i:i + self.batch_size]
             batch_y = self.y_train[i:i + self.batch_size]
+
+            sleep(0.05)  # データ生成で何かしらの重い処理があることを仮定
             yield batch_x, batch_y
 
     def test_iterator(self):
@@ -72,10 +75,4 @@ class MnistDataGenerator(object):
             batch_x = self.x_train[i:i + self.batch_size]
             batch_y = self.y_train[i:i + self.batch_size]
             yield batch_x, batch_y
-
-
-if __name__ == '__main__':
-    generator = MnistDataGenerator(128)
-    for images, labels in generator.train_iterator():
-        print(images.shape)
 

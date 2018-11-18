@@ -42,6 +42,7 @@ def main():
     parser.add_argument('--epochs', type=int, default=10)
     parser.add_argument('--batch_size', type=int, default=32)
     parser.add_argument('--model_dir', type=str, default='training_model')
+    parser.add_argument('--n_threads', type=int, default=4)
 
     args = parser.parse_args()
 
@@ -73,7 +74,7 @@ def main():
         sess.run(tf.global_variables_initializer())
 
         tf.train.start_queue_runners(sess=sess)
-        custom_runner.start_threads(sess, n_threads=4)
+        custom_runner.start_threads(sess, n_threads=args.n_threads)
 
         if os.path.isdir(save_dir):
             restore_from = tf.train.latest_checkpoint(save_dir)
