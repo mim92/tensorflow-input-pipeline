@@ -137,7 +137,7 @@ def main():
     save_dir = os.path.join(model_dir, 'weights')
     save_path = os.path.join(save_dir, 'epoch')
     begin_at_epoch = 0
-    steps_per_epoch = mnist_generator.num_train_sample // batch_size
+    steps_per_epoch = mnist_generator.num_train_sample // (batch_size * args.num_gpus1)
 
     with tf.Session() as sess:
         saver = tf.train.Saver(max_to_keep=5)  # will keep last 5 epochs
