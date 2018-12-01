@@ -20,7 +20,7 @@ def train(sess, train_model_spec, steps_per_epoch):
     t = tqdm(range(steps_per_epoch))
     acces, losses = [], []
     for _ in t:
-        _, loss, acc = sess.run([train_model_spec['train_op'], train_model_spec['loss']])
+        _, loss = sess.run([train_model_spec['train_op'], train_model_spec['loss']])
         losses.append(loss)
         t.set_postfix(train_loss=sum(losses) / len(losses))
     return sum(losses) / len(losses)
@@ -69,37 +69,6 @@ def average_gradients(tower_grads):
         grad_and_var = (grad, v)
         average_grads.append(grad_and_var)
     return average_grads
-
-
-def tower_loss(scope, train_inputs):
-    """Calculate the total loss on a single tower running the CIFAR model.
-    Args:
-    scope: unique prefix string identifying the CIFAR tower, e.g. 'tower_0'
-    images: Images. 4D tensor of shape [batch_size, height, width, 3].
-    labels: Labels. 1D tensor of shape [batch_size].
-    Returns:
-     Tensor of shape [] containing the total loss for a batch of data
-    """
-
-    # Build inference Graph.
-    logits = model_fn(train_inputs)
-
-
-    # Assemble all of the losses for the current tower only.
-    losses = tf.get_collection('losses', scope)
-
-    # Calculate the total loss for the current tower.
-    total_loss = tf.add_n(losses, name='total_loss')
-
-    # Attach a scalar summary to all individual losses and the total loss; do the
-    # same for the averaged version of the losses.
-    for l in losses + [total_loss]:
-        # Remove 'tower_[0-9]/' from the name in case this is a multi-GPU training
-        # session. This helps the clarity of presentation on tensorboard.
-        loss_name = re.sub('%s_[0-9]*/' % cifar10.TOWER_NAME, '', l.op.name)
-        tf.summary.scalar(loss_name, l)
-
-    return total_loss
 
 
 def main():
