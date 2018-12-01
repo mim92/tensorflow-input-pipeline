@@ -92,7 +92,6 @@ def main():
         custom_runner = CustomRunner(input_shape, num_classes, args.batch_size, mnist_generator.train_iterator)
         optimizer = tf.train.AdamOptimizer(learning_rate=0.001, beta1=0.9, beta2=0.98, epsilon=1e-8)
 
-    images, labels = custom_runner.get_inputs()
     valid_inputs = {'x': tf.placeholder(tf.float32, [None, ] + input_shape),
                     'y': tf.placeholder(tf.float32, [None, num_classes])}
 
@@ -100,6 +99,7 @@ def main():
     for gpu_index in range(args.num_gpus):
         with tf.device('/gpu:%d' % gpu_index):
             with tf.name_scope('%s_%d' % ("gpu", gpu_index)) as scope:
+                images, labels = custom_runner.get_inputs()
                 train_inputs = {'x': images, 'y': labels}
                 train_model_spec = model_fn_multigpu(train_inputs, is_train=True)
 
