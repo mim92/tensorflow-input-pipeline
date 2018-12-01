@@ -65,9 +65,6 @@ def model_fn_multigpu(inputs, reuse=False, is_train=True):
     model_spec['softmax'] = softmax
     if 'y' in inputs:
         cross_entropy_loss = -tf.reduce_sum(inputs['y'] * tf.log(softmax))
-        if is_train:
-            train_op = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy_loss)
-            model_spec['train_op'] = train_op
         correct_prediction = tf.equal(tf.argmax(softmax, 1), tf.argmax(inputs['y'], 1))
         accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
 
