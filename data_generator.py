@@ -61,12 +61,20 @@ class MnistDataGenerator(object):
         self.y_test = tf.keras.utils.to_categorical(y_test, 10)
         self.num_train_sample = len(self.x_train)
 
-    def train_iterator(self):
+    def train_iterator_heavy(self):
         while True:
             i = random.randint(0, len(self.x_train) - self.batch_size)
             batch_x = self.x_train[i:i + self.batch_size]
             batch_y = self.y_train[i:i + self.batch_size]
 
+            sleep(0.05)  # データ生成での思い処理を再現
+            yield batch_x, batch_y
+
+    def train_iterator(self):
+        while True:
+            i = random.randint(0, len(self.x_train) - self.batch_size)
+            batch_x = self.x_train[i:i + self.batch_size]
+            batch_y = self.y_train[i:i + self.batch_size]
             yield batch_x, batch_y
 
     def test_iterator(self):

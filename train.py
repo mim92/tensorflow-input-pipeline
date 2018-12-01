@@ -52,7 +52,7 @@ def main():
     input_shape = [28, 28, 1]
     num_classes = 10
     mnist_generator = MnistDataGenerator(args.batch_size)
-    custom_runner = CustomRunner(input_shape, num_classes, args.batch_size, mnist_generator.train_iterator)
+    custom_runner = CustomRunner(input_shape, num_classes, args.batch_size, mnist_generator.train_iterator_heavy)
 
     images, labels = custom_runner.get_inputs()
     train_inputs = {'x': images, 'y': labels}
