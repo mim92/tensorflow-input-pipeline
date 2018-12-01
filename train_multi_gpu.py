@@ -4,7 +4,7 @@ import argparse
 from tqdm import tqdm
 import logging
 
-from model import model_fn
+from model import model_fn_multigpu
 from data_generator import MnistDataGenerator, CustomRunner
 
 
@@ -93,7 +93,6 @@ def main():
         optimizer = tf.train.AdamOptimizer(learning_rate=0.001, beta1=0.9, beta2=0.98, epsilon=1e-8)
 
     images, labels = custom_runner.get_inputs()
-    train_inputs = {'x': images, 'y': labels}
     valid_inputs = {'x': tf.placeholder(tf.float32, [None, ] + input_shape),
                     'y': tf.placeholder(tf.float32, [None, num_classes])}
 
@@ -101,7 +100,8 @@ def main():
     for gpu_index in range(args.num_gpus):
         with tf.device('/gpu:%d' % gpu_index):
             with tf.name_scope('%s_%d' % ("gpu", gpu_index)) as scope:
-                train_model_spec = model_fn(train_inputs, is_train=True)
+                train_inputs = {'x': images, 'y': labels}
+                train_model_spec = model_fn_multigpu(train_inputs, is_train=True)
 
                 tf.add_to_collection(tf.GraphKeys.LOSSES, train_model_spec['loss'])
                 losses = tf.get_collection(tf.GraphKeys.LOSSES, scope)
@@ -124,7 +124,7 @@ def main():
                         'loss': total_clone_loss
                         }
 
-    valid_model_spec = model_fn(valid_inputs, reuse=True, is_train=False)
+    valid_model_spec = model_fn_multigpu(valid_inputs, reuse=True, is_train=False)
 
     os.makedirs(model_dir, exist_ok=True)
     set_logger(os.path.join(model_dir, 'train.log'))

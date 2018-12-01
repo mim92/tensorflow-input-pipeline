@@ -43,12 +43,35 @@ def model_fn(inputs, reuse=False, is_train=True):
         correct_prediction = tf.equal(tf.argmax(softmax, 1), tf.argmax(inputs['y'], 1))
         accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
 
-        # tf.summary.scalar('loss', cross_entropy_loss)
-        # tf.summary.scalar('acc', accuracy)
-        # summary_op = tf.summary.merge_all()
+        tf.summary.scalar('loss', cross_entropy_loss)
+        tf.summary.scalar('acc', accuracy)
+        summary_op = tf.summary.merge_all()
 
         model_spec['loss'] = cross_entropy_loss
         model_spec['accuracy'] = accuracy
-        # model_spec['summary_op'] = summary_op
+        model_spec['summary_op'] = summary_op
+    return model_spec
+
+
+def model_fn_multigpu(inputs, reuse=False, is_train=True):
+    if 'x' not in inputs:
+        ValueError('x is nothing')
+    if is_train and 'y' not in inputs:
+        ValueError('even training mode, y is nothing')
+
+    with tf.variable_scope('model', reuse=reuse):
+        softmax = build_model(inputs['x'])
+    model_spec = inputs
+    model_spec['softmax'] = softmax
+    if 'y' in inputs:
+        cross_entropy_loss = -tf.reduce_sum(inputs['y'] * tf.log(softmax))
+        if is_train:
+            train_op = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy_loss)
+            model_spec['train_op'] = train_op
+        correct_prediction = tf.equal(tf.argmax(softmax, 1), tf.argmax(inputs['y'], 1))
+        accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
+
+        model_spec['loss'] = cross_entropy_loss
+        model_spec['accuracy'] = accuracy
     return model_spec
 
