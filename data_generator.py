@@ -67,7 +67,6 @@ class MnistDataGenerator(object):
             batch_x = self.x_train[i:i + self.batch_size]
             batch_y = self.y_train[i:i + self.batch_size]
 
-            sleep(0.05)  # データ生成で何かしらの重い処理があることを仮定
             yield batch_x, batch_y
 
     def test_iterator(self):
