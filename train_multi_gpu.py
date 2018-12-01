@@ -94,6 +94,7 @@ def main():
 
     valid_inputs = {'x': tf.placeholder(tf.float32, [None, ] + input_shape),
                     'y': tf.placeholder(tf.float32, [None, num_classes])}
+    valid_model_spec = model_fn_multigpu(valid_inputs, reuse=False, is_train=False)
 
     gradients = []
     for gpu_index in range(args.num_gpus):
@@ -101,7 +102,8 @@ def main():
             with tf.name_scope('%s_%d' % ("gpu", gpu_index)) as scope:
                 images, labels = custom_runner.get_inputs()
                 train_inputs = {'x': images, 'y': labels}
-                train_model_spec = model_fn_multigpu(train_inputs, is_train=True)
+
+                train_model_spec = model_fn_multigpu(train_inputs, reuse=True, is_train=True)
 
                 tf.add_to_collection(tf.GraphKeys.LOSSES, train_model_spec['loss'])
                 losses = tf.get_collection(tf.GraphKeys.LOSSES, scope)
@@ -124,7 +126,6 @@ def main():
                         'loss': total_clone_loss
                         }
 
-    valid_model_spec = model_fn_multigpu(valid_inputs, reuse=True, is_train=False)
 
     os.makedirs(model_dir, exist_ok=True)
     set_logger(os.path.join(model_dir, 'train.log'))
