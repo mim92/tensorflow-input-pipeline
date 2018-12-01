@@ -43,12 +43,12 @@ def model_fn(inputs, reuse=False, is_train=True):
         correct_prediction = tf.equal(tf.argmax(softmax, 1), tf.argmax(inputs['y'], 1))
         accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
 
-        tf.summary.scalar('loss', cross_entropy_loss)
-        tf.summary.scalar('acc', accuracy)
-        summary_op = tf.summary.merge_all()
+        # tf.summary.scalar('loss', cross_entropy_loss)
+        # tf.summary.scalar('acc', accuracy)
+        # summary_op = tf.summary.merge_all()
 
         model_spec['loss'] = cross_entropy_loss
         model_spec['accuracy'] = accuracy
-        model_spec['summary_op'] = summary_op
+        # model_spec['summary_op'] = summary_op
     return model_spec
 

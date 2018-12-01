@@ -71,6 +71,37 @@ def average_gradients(tower_grads):
     return average_grads
 
 
+def tower_loss(scope, train_inputs):
+    """Calculate the total loss on a single tower running the CIFAR model.
+    Args:
+    scope: unique prefix string identifying the CIFAR tower, e.g. 'tower_0'
+    images: Images. 4D tensor of shape [batch_size, height, width, 3].
+    labels: Labels. 1D tensor of shape [batch_size].
+    Returns:
+     Tensor of shape [] containing the total loss for a batch of data
+    """
+
+    # Build inference Graph.
+    logits = model_fn(train_inputs)
+
+
+    # Assemble all of the losses for the current tower only.
+    losses = tf.get_collection('losses', scope)
+
+    # Calculate the total loss for the current tower.
+    total_loss = tf.add_n(losses, name='total_loss')
+
+    # Attach a scalar summary to all individual losses and the total loss; do the
+    # same for the averaged version of the losses.
+    for l in losses + [total_loss]:
+        # Remove 'tower_[0-9]/' from the name in case this is a multi-GPU training
+        # session. This helps the clarity of presentation on tensorboard.
+        loss_name = re.sub('%s_[0-9]*/' % cifar10.TOWER_NAME, '', l.op.name)
+        tf.summary.scalar(loss_name, l)
+
+    return total_loss
+
+
 def main():
     parser = argparse.ArgumentParser(description='train the model for all model')
     parser.add_argument('--epochs', type=int, default=10)
@@ -121,7 +152,7 @@ def main():
     # Group all updates to into a single train op.
     train_op = tf.group(apply_gradient_op)
     train_model_spec = {'train_op': train_op,
-                        'loss': losses
+                        'loss': total_clone_loss
                         }
 
     valid_model_spec = model_fn(valid_inputs, reuse=True, is_train=False)
