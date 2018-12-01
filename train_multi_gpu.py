@@ -111,8 +111,8 @@ def main():
                 losses = tf.get_collection(tf.GraphKeys.LOSSES, scope)
                 accuracy = tf.get_collection(tf.GraphKeys.METRIC_VARIABLES, scope)
 
-                total_clone_loss = tf.add_n(losses) / args.num_gpus
-                total_clone_accuracy = tf.add_n(accuracy) / args.num_gpus
+                total_clone_loss = tf.add_n(losses)
+                total_clone_accuracy = tf.add_n(accuracy)
 
                 # compute clone gradients
                 clone_gradients = optimizer.compute_gradients(total_clone_loss)
