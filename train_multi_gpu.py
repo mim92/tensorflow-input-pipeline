@@ -20,10 +20,11 @@ def train(sess, train_model_spec, steps_per_epoch):
     t = tqdm(range(steps_per_epoch))
     acces, losses = [], []
     for _ in t:
-        _, loss = sess.run([train_model_spec['train_op'], train_model_spec['loss']])
+        _, loss, acc = sess.run([train_model_spec['train_op'], train_model_spec['loss'], train_model_spec['accuracy']])
         losses.append(loss)
-        t.set_postfix(train_loss=sum(losses) / len(losses))
-    return sum(losses) / len(losses)
+        acces.append(acc)
+        t.set_postfix(train_loss=sum(losses) / len(losses), train_acc=sum(acces) / len(acces))
+    return sum(losses) / len(losses), sum(acces) / len(acces)
 
 
 def eval(sess, valid_model_spec, test_iterator):
@@ -106,8 +107,12 @@ def main():
                 train_model_spec = model_fn_multigpu(train_inputs, reuse=True, is_train=True)
 
                 tf.add_to_collection(tf.GraphKeys.LOSSES, train_model_spec['loss'])
+                tf.add_to_collection(tf.GraphKeys.LOSSES, train_model_spec['accuracy'])
                 losses = tf.get_collection(tf.GraphKeys.LOSSES, scope)
+                accuracy = tf.get_collection(tf.GraphKeys.METRIC_VARIABLES, scope)
+
                 total_clone_loss = tf.add_n(losses) / args.num_gpus
+                total_clone_accuracy = tf.add_n(accuracy) / args.num_gpus
 
                 # compute clone gradients
                 clone_gradients = optimizer.compute_gradients(total_clone_loss)
@@ -123,9 +128,9 @@ def main():
     # Group all updates to into a single train op.
     train_op = tf.group(apply_gradient_op)
     train_model_spec = {'train_op': train_op,
-                        'loss': total_clone_loss
+                        'loss': total_clone_loss,
+                        'accuracy': total_clone_accuracy,
                         }
-
 
     os.makedirs(model_dir, exist_ok=True)
     set_logger(os.path.join(model_dir, 'train.log'))
@@ -149,9 +154,9 @@ def main():
 
         for epoch in range(begin_at_epoch, epochs):
             logging.info('Epoch {}/{}'.format(epoch + 1, epochs))
-            train_loss = train(sess, train_model_spec, steps_per_epoch)
+            train_loss, train_acc = train(sess, train_model_spec, steps_per_epoch)
             valid_loss, valid_acc = eval(sess, valid_model_spec, mnist_generator.test_iterator)
-            logging.info('train/loss: {:.4f}'.format(train_loss))
+            logging.info('train/acc: {:.4f}, train/loss: {:.4f}'.format(train_acc, train_loss))
             logging.info('valid/acc: {:.4f}, valid/loss: {:.4f}'.format(valid_acc, valid_loss))
             saver.save(sess, save_path, global_step=epoch + 1)
 
