@@ -107,7 +107,7 @@ def main():
                 train_model_spec = model_fn_multigpu(train_inputs, reuse=True, is_train=True)
 
                 tf.add_to_collection(tf.GraphKeys.LOSSES, train_model_spec['loss'])
-                tf.add_to_collection(tf.GraphKeys.LOSSES, train_model_spec['accuracy'])
+                tf.add_to_collection(tf.GraphKeys.METRIC_VARIABLES, train_model_spec['accuracy'])
                 losses = tf.get_collection(tf.GraphKeys.LOSSES, scope)
                 accuracy = tf.get_collection(tf.GraphKeys.METRIC_VARIABLES, scope)
 
