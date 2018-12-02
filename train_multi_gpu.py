@@ -4,7 +4,7 @@ import argparse
 from tqdm import tqdm
 import logging
 
-from model import model_fn
+from model import model_fn_multigpu
 from data_generator import MnistDataGenerator, CustomRunner
 
 
@@ -20,10 +20,11 @@ def train(sess, train_model_spec, steps_per_epoch):
     t = tqdm(range(steps_per_epoch))
     acces, losses = [], []
     for _ in t:
-        _, loss, acc = sess.run([train_model_spec['train_op'], train_model_spec['loss']])
+        _, loss, acc = sess.run([train_model_spec['train_op'], train_model_spec['loss'], train_model_spec['accuracy']])
         losses.append(loss)
-        t.set_postfix(train_loss=sum(losses) / len(losses))
-    return sum(losses) / len(losses)
+        acces.append(acc)
+        t.set_postfix(train_loss=sum(losses) / len(losses), train_acc=sum(acces) / len(acces))
+    return sum(losses) / len(losses), sum(acces) / len(acces)
 
 
 def eval(sess, valid_model_spec, test_iterator):
@@ -92,20 +93,26 @@ def main():
         custom_runner = CustomRunner(input_shape, num_classes, args.batch_size, mnist_generator.train_iterator)
         optimizer = tf.train.AdamOptimizer(learning_rate=0.001, beta1=0.9, beta2=0.98, epsilon=1e-8)
 
-    images, labels = custom_runner.get_inputs()
-    train_inputs = {'x': images, 'y': labels}
     valid_inputs = {'x': tf.placeholder(tf.float32, [None, ] + input_shape),
                     'y': tf.placeholder(tf.float32, [None, num_classes])}
+    valid_model_spec = model_fn_multigpu(valid_inputs, reuse=False, is_train=False)
 
     gradients = []
     for gpu_index in range(args.num_gpus):
         with tf.device('/gpu:%d' % gpu_index):
             with tf.name_scope('%s_%d' % ("gpu", gpu_index)) as scope:
-                train_model_spec = model_fn(train_inputs, is_train=True)
+                images, labels = custom_runner.get_inputs()
+                train_inputs = {'x': images, 'y': labels}
+
+                train_model_spec = model_fn_multigpu(train_inputs, reuse=True, is_train=True)
 
                 tf.add_to_collection(tf.GraphKeys.LOSSES, train_model_spec['loss'])
+                tf.add_to_collection(tf.GraphKeys.METRIC_VARIABLES, train_model_spec['accuracy'])
                 losses = tf.get_collection(tf.GraphKeys.LOSSES, scope)
-                total_clone_loss = tf.add_n(losses) / args.num_gpus
+                accuracy = tf.get_collection(tf.GraphKeys.METRIC_VARIABLES, scope)
+
+                total_clone_loss = tf.add_n(losses)
+                total_clone_accuracy = tf.add_n(accuracy)
 
                 # compute clone gradients
                 clone_gradients = optimizer.compute_gradients(total_clone_loss)
@@ -121,17 +128,16 @@ def main():
     # Group all updates to into a single train op.
     train_op = tf.group(apply_gradient_op)
     train_model_spec = {'train_op': train_op,
-                        'loss': losses
+                        'loss': total_clone_loss,
+                        'accuracy': total_clone_accuracy,
                         }
-
-    valid_model_spec = model_fn(valid_inputs, reuse=True, is_train=False)
 
     os.makedirs(model_dir, exist_ok=True)
     set_logger(os.path.join(model_dir, 'train.log'))
     save_dir = os.path.join(model_dir, 'weights')
     save_path = os.path.join(save_dir, 'epoch')
     begin_at_epoch = 0
-    steps_per_epoch = mnist_generator.num_train_sample // batch_size
+    steps_per_epoch = mnist_generator.num_train_sample // (batch_size * args.num_gpus)
 
     with tf.Session() as sess:
         saver = tf.train.Saver(max_to_keep=5)  # will keep last 5 epochs
@@ -148,9 +154,9 @@ def main():
 
         for epoch in range(begin_at_epoch, epochs):
             logging.info('Epoch {}/{}'.format(epoch + 1, epochs))
-            train_loss = train(sess, train_model_spec, steps_per_epoch)
+            train_loss, train_acc = train(sess, train_model_spec, steps_per_epoch)
             valid_loss, valid_acc = eval(sess, valid_model_spec, mnist_generator.test_iterator)
-            logging.info('train/loss: {:.4f}'.format(train_loss))
+            logging.info('train/acc: {:.4f}, train/loss: {:.4f}'.format(train_acc, train_loss))
             logging.info('valid/acc: {:.4f}, valid/loss: {:.4f}'.format(valid_acc, valid_loss))
             saver.save(sess, save_path, global_step=epoch + 1)
 

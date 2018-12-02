@@ -52,3 +52,23 @@ def model_fn(inputs, reuse=False, is_train=True):
         model_spec['summary_op'] = summary_op
     return model_spec
 
+
+def model_fn_multigpu(inputs, reuse=False, is_train=True):
+    if 'x' not in inputs:
+        ValueError('x is nothing')
+    if is_train and 'y' not in inputs:
+        ValueError('even training mode, y is nothing')
+
+    with tf.variable_scope('model', reuse=reuse):
+        softmax = build_model(inputs['x'])
+    model_spec = inputs
+    model_spec['softmax'] = softmax
+    if 'y' in inputs:
+        cross_entropy_loss = -tf.reduce_sum(inputs['y'] * tf.log(softmax))
+        correct_prediction = tf.equal(tf.argmax(softmax, 1), tf.argmax(inputs['y'], 1))
+        accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
+
+        model_spec['loss'] = cross_entropy_loss
+        model_spec['accuracy'] = accuracy
+    return model_spec
+
