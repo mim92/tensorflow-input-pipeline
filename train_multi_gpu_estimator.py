@@ -59,9 +59,7 @@ def main():
         classifier = tf.estimator.Estimator(model_fn=cnn_model_fn, model_dir='model_dir')
 
     # Train the Model.
-    result = classifier.train(input_fn=lambda: mnist_generator.train_iterator_tf_data(), steps=steps_per_epoch)
-    print(result)
-    print(result['accuracy'])
+    classifier.train(input_fn=lambda: mnist_generator.train_iterator_tf_data(), steps=steps_per_epoch)
 
     # evaluate the Model.
     result = classifier.evaluate(input_fn=lambda: mnist_generator.test_iterator_tf_data())
