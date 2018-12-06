@@ -51,14 +51,20 @@ class CustomRunner(object):
 
 
 class MnistDataGenerator(object):
-    def __init__(self, batch_size):
+    def __init__(self, batch_size, one_hot=True):
         self.batch_size = batch_size
         (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
         self.x_train = np.expand_dims(x_train, axis=-1) / 255.
         self.x_test = np.expand_dims(x_test, axis=-1) / 255.
+        self.y_dtype = np.float32 if one_hot else np.int32
 
-        self.y_train = tf.keras.utils.to_categorical(y_train, 10)
-        self.y_test = tf.keras.utils.to_categorical(y_test, 10)
+        if one_hot:
+            self.y_train = tf.keras.utils.to_categorical(y_train, 10)
+            self.y_test = tf.keras.utils.to_categorical(y_test, 10)
+        else:
+            self.y_train = y_train
+            self.y_test = y_test
+
         self.num_train_sample = len(self.x_train)
 
     def train_iterator_heavy(self):
@@ -77,9 +83,18 @@ class MnistDataGenerator(object):
             batch_y = self.y_train[i:i + self.batch_size]
             yield batch_x, batch_y
 
+    def train_iterator_tf_data(self):
+        dataset = tf.data.Dataset.from_tensor_slices((self.x_train.astype(np.float32), self.y_train.astype(self.y_dtype)))
+        dataset = dataset.shuffle(len(self.x_train)).repeat().batch(self.batch_size)
+        return dataset
+
     def test_iterator(self):
         for i in range(0, len(self.x_test), self.batch_size):
-            batch_x = self.x_train[i:i + self.batch_size]
-            batch_y = self.y_train[i:i + self.batch_size]
+            batch_x = self.x_test[i:i + self.batch_size]
+            batch_y = self.y_test[i:i + self.batch_size]
             yield batch_x, batch_y
 
+    def test_iterator_tf_data(self):
+        dataset = tf.data.Dataset.from_tensor_slices((self.x_test.astype(np.float32), self.y_test.astype(self.y_dtype)))
+        dataset = dataset.batch(self.batch_size)
+        return dataset

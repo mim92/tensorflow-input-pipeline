@@ -1,9 +1,7 @@
 import tensorflow as tf
 
-Flatten = tf.keras.layers.Flatten()
 
-
-def build_model(inputs):
+def build_model(inputs, last_activateion='softmax'):
     x = tf.layers.conv2d(inputs, 4, (3, 3), activation='relu', padding='same')
     x = tf.layers.batch_normalization(x)
     x = tf.layers.max_pooling2d(x, (2, 2), (2, 2))
@@ -18,10 +16,10 @@ def build_model(inputs):
     x = tf.layers.batch_normalization(x)
     x = tf.layers.max_pooling2d(x, (2, 2), (2, 2))
 
-    x = Flatten(x)
+    x = tf.layers.flatten(x)
 
     x = tf.layers.dense(x, 64, activation='relu')
-    softmax = tf.layers.dense(x, 10, activation='softmax')
+    softmax = tf.layers.dense(x, 10, activation=last_activateion)
     return softmax
 
 
@@ -63,6 +61,7 @@ def model_fn_multigpu(inputs, reuse=False, is_train=True):
         softmax = build_model(inputs['x'])
     model_spec = inputs
     model_spec['softmax'] = softmax
+    model_spec['prediction'] = tf.argmax(softmax, axis=-1)
     if 'y' in inputs:
         cross_entropy_loss = -tf.reduce_sum(inputs['y'] * tf.log(softmax))
         correct_prediction = tf.equal(tf.argmax(softmax, 1), tf.argmax(inputs['y'], 1))
