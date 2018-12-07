@@ -79,13 +79,10 @@ def main():
                                     session_config=None)
     classifier = tf.estimator.Estimator(model_fn=cnn_model_fn, model_dir=model_dir, config=config)
 
-    # for epoch in range(epochs):
     # Train the Model.
-    classifier.train(input_fn=lambda: train_input_fn_multi_thread(batch_size, num_calls=n_threads), steps=steps_per_epoch)
-
-    classifier.train(input_fn=lambda: train_input_fn(batch_size), steps=steps_per_epoch)
-
-    classifier.train(input_fn=lambda: mnist_generator.train_iterator_tf_data(), steps=steps_per_epoch)
+    for e in range(epochs):
+        classifier.train(input_fn=lambda: train_input_fn(batch_size), steps=steps_per_epoch)
+        # classifier.train(input_fn=lambda: mnist_generator.train_iterator_tf_data(), steps=steps_per_epoch)
 
     # evaluate the Model.
     result = classifier.evaluate(input_fn=lambda: mnist_generator.test_iterator_tf_data())
