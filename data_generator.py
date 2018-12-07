@@ -90,8 +90,8 @@ class MnistDataGenerator(object):
 
     def train_iterator_one_shot(self):
         for i in range(0, len(self.x_train)):
-            for _ in range(10000):
-                _ += _
+            # for _ in range(10000):
+            #     _ += _
             yield self.x_train[i], self.y_train[i]
 
     def test_iterator(self):

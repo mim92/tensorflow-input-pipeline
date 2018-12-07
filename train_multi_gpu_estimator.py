@@ -43,7 +43,9 @@ def train_input_fn(batch_size):
 
 def train_input_fn_multi_thread(batch_size, num_calls=16):
     mnist_generator = MnistDataGenerator(batch_size, one_hot=True)
-    dataset = tf.data.Dataset.from_generator(mnist_generator.train_iterator_one_shot, (tf.float32, tf.float32), ([28, 28, 1], [10]))
+    dataset = tf.data.Dataset.from_generator(generator=mnist_generator.train_iterator_one_shot,
+                                             output_types=(tf.float32, tf.float32),
+                                             output_shapes=([28, 28, 1], [10]))
     # dataset = dataset.map(lambda x, y: (x, y), num_parallel_calls=num_calls).batch(batch_size=batch_size).prefetch(4)
     dataset = dataset.batch(batch_size=batch_size)
     return dataset
