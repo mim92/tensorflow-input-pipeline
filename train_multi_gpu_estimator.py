@@ -21,7 +21,7 @@ def cnn_model_fn(features, labels, mode):
 
     if mode == tf.estimator.ModeKeys.TRAIN:
         with tf.device('/cpu:0'):
-            global_steps = tf.train.get_global_step()
+            global_steps = tf.train.get_or_create_global_step()
         lr = tf.pow(float(1000), -0.5) * tf.minimum(tf.pow(tf.cast(global_steps, tf.float32), -0.5),
                                                     tf.cast(global_steps, tf.float32) * tf.pow(
                                                         float(1000), -1.5))
