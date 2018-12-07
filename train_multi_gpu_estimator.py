@@ -20,14 +20,14 @@ def cnn_model_fn(features, labels, mode):
         return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions)
 
     if mode == tf.estimator.ModeKeys.TRAIN:
-        with tf.device('/cpu:0'):
-            global_steps = tf.train.get_or_create_global_step()
-        d_model = tf.constant(1000, dtype=tf.float32)
-        lr = d_model ** -0.5 * tf.minimum(tf.to_float(global_steps) ** -0.5,
-                                          tf.to_float(global_steps) * d_model ** -1.5)
-        print(lr)
+        # with tf.device('/cpu:0'):
+        #     global_steps = tf.train.get_or_create_global_step()
+        # d_model = tf.constant(1000, dtype=tf.float32)
+        # lr = d_model ** -0.5 * tf.minimum(tf.to_float(global_steps) ** -0.5,
+        #                                   tf.to_float(global_steps) * d_model ** -1.5)
+        # print(lr)
         optimizer = tf.train.AdamOptimizer(learning_rate=0.001, beta1=0.9, beta2=0.98, epsilon=1e-8)
-        train_op = optimizer.minimize(train_model_spec['loss'], global_step=global_steps)
+        train_op = optimizer.minimize(train_model_spec['loss'])
         return tf.estimator.EstimatorSpec(mode=mode, loss=train_model_spec['loss'], train_op=train_op)
 
         # optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.001)
