@@ -27,7 +27,7 @@ def cnn_model_fn(features, labels, mode):
         #                                   tf.to_float(global_steps) * d_model ** -1.5)
         # print(lr)
         optimizer = tf.train.AdamOptimizer(learning_rate=0.001, beta1=0.9, beta2=0.98, epsilon=1e-8)
-        train_op = optimizer.minimize(train_model_spec['loss'], global_step=tf.train.get_global_step())
+        train_op = optimizer.minimize(loss=train_model_spec['loss'], global_step=tf.train.get_global_step())
         return tf.estimator.EstimatorSpec(mode=mode, loss=train_model_spec['loss'], train_op=train_op)
 
         # optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.001)
