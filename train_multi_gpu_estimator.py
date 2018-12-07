@@ -22,8 +22,8 @@ def cnn_model_fn(features, labels, mode):
     if mode == tf.estimator.ModeKeys.TRAIN:
         with tf.device('/cpu:0'):
             global_steps = tf.train.get_or_create_global_step()
-        lr = tf.pow(float(1000), -0.5) * tf.minimum(tf.pow(tf.cast(global_steps, tf.float32), -0.5),
-                                                    tf.cast(global_steps, tf.float32) * tf.pow(
+        lr = tf.pow(float(1000), -0.5) * tf.minimum(tf.pow(tf.to_float(global_steps), -0.5),
+                                                    tf.to_float(global_steps) * tf.pow(
                                                         float(1000), -1.5))
         optimizer = tf.train.AdamOptimizer(learning_rate=lr, beta1=0.9, beta2=0.98, epsilon=1e-8)
         train_op = optimizer.minimize(train_model_spec['loss'], global_step=global_steps)
