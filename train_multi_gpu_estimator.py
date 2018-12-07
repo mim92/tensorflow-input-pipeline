@@ -47,7 +47,7 @@ def train_input_fn_multi_thread(batch_size, num_calls=16):
                                              output_types=(tf.float32, tf.float32),
                                              output_shapes=([28, 28, 1], [10]))
     # dataset = dataset.map(lambda x, y: (x, y), num_parallel_calls=num_calls).batch(batch_size=batch_size).prefetch(4)
-    dataset = dataset.batch(batch_size=batch_size)
+    dataset = dataset.map(lambda x, y: (x, y), num_parallel_calls=num_calls).batch(batch_size=batch_size)
     return dataset
 
 
@@ -84,6 +84,8 @@ def main():
     classifier.train(input_fn=lambda: train_input_fn_multi_thread(batch_size, num_calls=n_threads), steps=steps_per_epoch)
 
     classifier.train(input_fn=lambda: train_input_fn(batch_size), steps=steps_per_epoch)
+
+    classifier.train(input_fn=lambda: mnist_generator.train_iterator_tf_data(), steps=steps_per_epoch)
 
     # evaluate the Model.
     result = classifier.evaluate(input_fn=lambda: mnist_generator.test_iterator_tf_data())
