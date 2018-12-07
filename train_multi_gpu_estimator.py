@@ -74,7 +74,7 @@ def main():
         strategy = tf.contrib.distribute.MirroredStrategy(num_gpus=args.num_gpus)
 
     config = tf.estimator.RunConfig(train_distribute=strategy,
-                                    session_config=tf.ConfigProto(inter_op_parallelism_threads=n_threads))
+                                    session_config=None)
     classifier = tf.estimator.Estimator(model_fn=cnn_model_fn, model_dir=model_dir, config=config)
 
     # for epoch in range(epochs):
