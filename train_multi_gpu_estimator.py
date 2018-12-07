@@ -34,19 +34,18 @@ def cnn_model_fn(features, labels, mode):
 
 def train_input_fn(batch_size):
     mnist_generator = MnistDataGenerator(batch_size, one_hot=True)
-    ds = tf.data.Dataset.from_generator(mnist_generator.test_iterator, (tf.float32, tf.float32), ([None, 28, 28, 1], [None, 10]))
-    iterator = ds.repeat().make_one_shot_iterator()
-    iterator = iterator.get_next()
-    return iterator
+    dataset = tf.data.Dataset.from_generator(generator=mnist_generator.train_iterator,
+                                             output_types=(tf.float32, tf.float32),
+                                             output_shapes=([None, 28, 28, 1], [None, 10]))
+
+    return dataset
 
 
 def train_input_fn_multi_thread(batch_size, num_calls=16):
     mnist_generator = MnistDataGenerator(batch_size, one_hot=True)
     dataset = tf.data.Dataset.from_generator(mnist_generator.train_iterator_one_shot, (tf.float32, tf.float32), ([28, 28, 1], [10]))
-    chained_dataset = dataset.map(lambda x, y: (x, y), num_parallel_calls=num_calls).batch(batch_size=batch_size).prefetch(4)
-    # chained_dataset = dataset.batch(batch_size=batch_size).prefetch(4)
-    iterator = chained_dataset.make_one_shot_iterator().get_next()
-    return iterator
+    dataset = dataset.map(lambda x, y: (x, y), num_parallel_calls=num_calls).batch(batch_size=batch_size).prefetch(4)
+    return dataset
 
 
 def main():
@@ -80,6 +79,8 @@ def main():
     # for epoch in range(epochs):
     # Train the Model.
     classifier.train(input_fn=lambda: train_input_fn_multi_thread(batch_size, num_calls=n_threads), steps=steps_per_epoch)
+
+    classifier.train(input_fn=lambda: train_input_fn(batch_size), steps=steps_per_epoch)
 
     # evaluate the Model.
     result = classifier.evaluate(input_fn=lambda: mnist_generator.test_iterator_tf_data())
